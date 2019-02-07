@@ -9,6 +9,9 @@ from enum import Enum
 ROOT_DIR = os.getcwd()
 DATE_FORMAT = '%Y-%m-%d'
 
+COMPLETED_MARKERS = ["[x]", "[X]"]
+UNCOMPLETED_MARKERS = ["-", "*", "[]", "[ ]", "->"]
+
 class State(Enum):
     TODAY = "TODAY"
     THIS_WEEK = "THIS WEEK"
@@ -88,7 +91,10 @@ def create_file(filename_stub: str, todos: Dict[str, List[str]]) -> None:
         for heading, tasks in todos.items():
             f.write(f'# {heading}\n')
             for task in tasks:
-                f.write(f'{task}\n')
+                output = task
+                if heading == State.COMPLETED.value:
+                    output = COMPLETED_MARKERS[0] + " " + task.lstrip("".join(COMPLETED_MARKERS + UNCOMPLETED_MARKERS))
+                f.write(f'{output}\n')
             f.write('\n')
 
 
@@ -100,6 +106,9 @@ def add_task(state: State, task: str) -> None:
 
 
 def get_task_state(task: str, section: Section) -> State:
+    if any(task.startswith(marker) for marker in COMPLETED_MARKERS):
+        return State.COMPLETED
+
     print(f'''Did you complete this {section.last}?
     <enter> = completed
     d = dropped / abandoned / delegated
