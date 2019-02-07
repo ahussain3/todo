@@ -6,7 +6,7 @@ import datetime
 from subprocess import run
 from enum import Enum
 
-ROOT_DIR = os.getcwd()
+ROOT_DIR = "/Users/awais/Dropbox (Personal)/Todos/"
 DATE_FORMAT = '%Y-%m-%d'
 
 COMPLETED_MARKERS = ["[x]", "[X]"]
@@ -161,9 +161,10 @@ def main():
         # open the file for today in vim
         exit()
 
-    existing_files = [fname for fname in os.listdir() if fname.endswith(".md")]
+    existing_files = [fname for fname in os.listdir(ROOT_DIR) if fname.endswith(".md")]
     if len(existing_files) == 0:
-        create_file(today_date, {})
+        create_file(today_date, TODOS)
+        exit()
 
     most_recent_date_str = sorted(existing_files)[0].split(".")[0]
     most_recent_date = datetime.datetime.strptime(most_recent_date_str, DATE_FORMAT)
