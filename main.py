@@ -139,7 +139,7 @@ def get_task_state(task: str, section: Section) -> State:
             response = input(task + '\n')
 
 
-def read_section(filepath: str, section: Section) -> List[str]:
+def read_section(filepath: str, section: Section, to_review: bool) -> List[str]:
     with open(filepath, "r") as f:
         reading = False
         for line in f:
@@ -147,7 +147,11 @@ def read_section(filepath: str, section: Section) -> List[str]:
                 break
             if reading:
                 task = line.strip()
-                state = get_task_state(task, section)
+                if to_review:
+                    state = get_task_state(task, section)
+                else:
+                    state = section.heading
+
                 add_task(state, task)
             if line.strip() == f"# {section.heading.value}":
                 reading = True
@@ -170,8 +174,11 @@ def main():
     most_recent_date = datetime.datetime.strptime(most_recent_date_str, DATE_FORMAT)
 
     for tp in TIME_PERIODS:
-        if not tp.matches(most_recent_date):
-            tasks = read_section(os.path.join(ROOT_DIR, most_recent_date_str + ".md"), tp)
+        tasks = read_section(
+            filepath=os.path.join(ROOT_DIR, most_recent_date_str + ".md"),
+            section=tp,
+            to_review=not tp.matches(most_recent_date),
+        )
 
     create_file(today_date, TODOS)
 
