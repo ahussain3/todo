@@ -23,9 +23,11 @@ class State(Enum):
 
 class Section(object):
     heading: State = None
-    # used to specify which
+    # used to specify the language we should use when referring to the last week/month etc.
     last: str = None
-    def matches(dt: datetime) -> bool:
+
+    # True if the date specified is within the current time period
+    def matches(dt: datetime.datetime) -> bool:
         raise NotImplementedError
 
 
@@ -33,7 +35,7 @@ class Day(Section):
     heading = State.TODAY
     last = "yesterday"
 
-    def matches(dt: datetime) -> bool:
+    def matches(dt: datetime.datetime) -> bool:
         today = datetime.datetime.now()
         return (
             dt.day == today.day
@@ -45,7 +47,7 @@ class Week(Section):
     heading = State.THIS_WEEK
     last = "last week"
 
-    def matches(dt: datetime) -> bool:
+    def matches(dt: datetime.datetime) -> bool:
         today = datetime.datetime.now()
         return (
             dt.isocalendar()[1] == today.isocalendar()[1]
@@ -56,7 +58,7 @@ class Month(Section):
     heading = State.THIS_MONTH
     last = "last month"
 
-    def matches(dt: datetime) -> bool:
+    def matches(dt: datetime.datetime) -> bool:
         today = datetime.datetime.now()
         return dt.month == today.month and dt.year == today.year
 
@@ -64,7 +66,7 @@ class Quarter(Section):
     heading = State.THIS_QUARTER
     last = "last quarter"
 
-    def matches(dt: datetime) -> bool:
+    def matches(dt: datetime.datetime) -> bool:
         today = datetime.datetime.now()
         groups = [[1,2,3], [4,5,6], [7,8,9], [10,11,12]]
         return (
@@ -105,8 +107,12 @@ def add_task(state: State, task: str) -> None:
     TODOS[state.value].append(task)
 
 
-def get_task_state(task: str, section: Section) -> State:
-    if any(task.startswith(marker) for marker in COMPLETED_MARKERS):
+def is_task_completed(task: str) -> bool:
+    return any(task.startswith(marker) for marker in COMPLETED_MARKERS)
+
+
+def review_task(task: str, section: Section) -> State:
+    if is_task_completed(task):
         return State.COMPLETED
 
     print(f'''Did you complete this {section.last}?
@@ -128,8 +134,8 @@ def get_task_state(task: str, section: Section) -> State:
             return State.THIS_WEEK
         elif response == 'm':
             return State.THIS_MONTH
-        # elif response == 'q':
-        #     return State.THIS_QUARTER
+        elif response == 'q':
+            return State.THIS_QUARTER
         elif response == 'y':
             return State.THIS_YEAR
         elif response == 'd':
@@ -148,7 +154,9 @@ def read_section(filepath: str, section: Section, to_review: bool) -> List[str]:
             if reading:
                 task = line.strip()
                 if to_review:
-                    state = get_task_state(task, section)
+                    state = review_task(task, section)
+                elif is_task_completed(task):
+                    state = State.COMPLETED
                 else:
                     state = section.heading
 
@@ -162,7 +170,7 @@ def main():
     today_filepath = os.path.join(ROOT_DIR, today_date + ".md")
 
     if os.path.exists(today_filepath):
-        # open the file for today in vim
+        # will later use vim to open the file for today
         exit()
 
     existing_files = [fname for fname in os.listdir(ROOT_DIR) if fname.endswith(".md")]
@@ -170,7 +178,7 @@ def main():
         create_file(today_date, TODOS)
         exit()
 
-    most_recent_date_str = sorted(existing_files)[0].split(".")[0]
+    most_recent_date_str = sorted(existing_files)[-1].split(".")[0]
     most_recent_date = datetime.datetime.strptime(most_recent_date_str, DATE_FORMAT)
 
     for tp in TIME_PERIODS:
