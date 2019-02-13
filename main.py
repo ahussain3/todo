@@ -14,6 +14,7 @@ UNCOMPLETED_MARKERS = ["-", "*", "[]", "[ ]", "->"]
 
 class State(Enum):
     TODAY = "TODAY"
+    ANYTIME = "ANYTIME"
     THIS_WEEK = "THIS WEEK"
     THIS_MONTH = "THIS MONTH"
     THIS_QUARTER = "THIS QUARTER"
@@ -42,6 +43,13 @@ class Day(Section):
             and dt.month == today.month
             and dt.year == today.year
         )
+
+class Anytime(Section):
+    heading = State.ANYTIME
+    last = "yet"
+
+    def matches(dt: datetime.datetime) -> bool:
+        return True
 
 class Week(Section):
     heading = State.THIS_WEEK
@@ -82,7 +90,7 @@ class Year(Section):
         today = datetime.datetime.now()
         return dt.year == today.year
 
-TIME_PERIODS = [Day, Week, Month, Quarter, Year]
+TIME_PERIODS = [Day, Anytime, Week, Month, Quarter, Year]
 TODOS = {state.value:[] for state in State}
 
 
@@ -119,6 +127,7 @@ def review_task(task: str, section: Section) -> State:
     <enter> = completed
     d = dropped / abandoned / delegated
     t = defer to today
+    a = defer to anytime
     w = defer to this week
     m = defer to this month
     q = defer to this quarter
@@ -130,6 +139,8 @@ def review_task(task: str, section: Section) -> State:
             return State.COMPLETED
         elif response == 't':
             return State.TODAY
+        elif response == 'a':
+            return State.ANYTIME
         elif response == 'w':
             return State.THIS_WEEK
         elif response == 'm':
