@@ -6,7 +6,7 @@ import datetime
 from subprocess import run
 from enum import Enum
 
-ROOT_DIR = "/Users/awais/Dropbox (Personal)/Todos/"
+ROOT_DIR = "~/todo"
 DATE_FORMAT = '%Y-%m-%d'
 
 COMPLETED_MARKERS = ["[x]", "[X]"]
