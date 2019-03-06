@@ -49,7 +49,7 @@ class Anytime(Section):
     last = "yet"
 
     def matches(dt: datetime.datetime) -> bool:
-        return True
+        return False
 
 class Week(Section):
     heading = State.THIS_WEEK
