@@ -2,7 +2,7 @@
 
 A lightweight vim based todo manager inspired by this [logbook](https://routley.io/tech/2017/11/23/logbook.html) system.
 
-Check out this [write up](https://awais.io/my-new-to-do-management-system/) for more information.
+Check out this [write up](https://awais.io/vim-based-todo/) for more information.
 
 ## Installation instructions (WIP):
 
