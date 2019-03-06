@@ -1,5 +1,3 @@
 #!/bin/sh
 python3 ~/Developer/todo/main.py
 vim ~/Dropbox\ \(Personal\)/Todos/$(date '+%Y-%m-%d').md
-
-

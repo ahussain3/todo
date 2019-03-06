@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, NamedTuple
 
 import os
 import sys
@@ -11,6 +11,9 @@ DATE_FORMAT = '%Y-%m-%d'
 
 COMPLETED_MARKERS = ["[x]", "[X]"]
 UNCOMPLETED_MARKERS = ["-", "*", "[]", "[ ]", "->"]
+
+
+# MODELS
 
 class State(Enum):
     TODAY = "TODAY"
@@ -31,6 +34,12 @@ class Section(object):
     def matches(dt: datetime.datetime) -> bool:
         raise NotImplementedError
 
+class Action(NamedTuple):
+    command: str
+    label: str
+    state: State
+
+# TIME PERIODS
 
 class Day(Section):
     heading = State.TODAY
@@ -90,9 +99,37 @@ class Year(Section):
         today = datetime.datetime.now()
         return dt.year == today.year
 
+# BASIC CONFIG / GLOBALS
+
 TIME_PERIODS = [Day, Anytime, Week, Month, Quarter, Year]
 TODOS = {state.value:[] for state in State}
+ACTIONS = [
+    Action("", "<enter> = completed", State.COMPLETED),
+    Action("t", "t = defer to today", State.TODAY),
+    Action("a", "a = defer to anytime", State.ANYTIME),
+    Action("w", "w = defer to this week", State.THIS_WEEK),
+    Action("m", "m = defer to this month", State.THIS_MONTH),
+    Action("q", "q = defer to this quarter", State.THIS_QUARTER),
+    Action("y", "y = defer to this year", State.THIS_YEAR),
+    Action("d", "d = dropped / abandoned / delegated", State.DROPPED),
+]
 
+# BUSINESS LOGIC
+
+def get_action(command: str) -> Action:
+    actions = [action for action in ACTIONS if action.command == command]
+    if not actions:
+        return None
+    if len(actions) > 1:
+        raise Exception("Multiple actions with the same command.")
+    return actions[0]
+
+def get_available_commands() -> str:
+    commands = ", ".join([action.command for action in ACTIONS])
+    return f"[{commands}]"
+
+def generate_instructions() -> str:
+    return "\n".join([action.label for action in ACTIONS])
 
 def create_file(filename_stub: str, todos: Dict[str, List[str]]) -> None:
     with open(os.path.join(ROOT_DIR, filename_stub + ".md"), "w+") as f:
@@ -118,42 +155,31 @@ def add_task(state: State, task: str) -> None:
 def is_task_completed(task: str) -> bool:
     return any(task.startswith(marker) for marker in COMPLETED_MARKERS)
 
+def get_task_input(task: str, section: Section) -> str:
+    available_commands = get_available_commands()
+
+    print(f'{task}')
+    return input(f"Did you complete this {section.last}? {available_commands}\n")
+
 
 def review_task(task: str, section: Section) -> State:
     if is_task_completed(task):
         return State.COMPLETED
 
-    print(f'''Did you complete this {section.last}?
-    <enter> = completed
-    d = dropped / abandoned / delegated
-    t = defer to today
-    a = defer to anytime
-    w = defer to this week
-    m = defer to this month
-    q = defer to this quarter
-    y = defer to this year
-    ''')
-    response = input(task + '\n')
+    response = get_task_input(task, section)
+
     while response is not None:
-        if response == '':
-            return State.COMPLETED
-        elif response == 't':
-            return State.TODAY
-        elif response == 'a':
-            return State.ANYTIME
-        elif response == 'w':
-            return State.THIS_WEEK
-        elif response == 'm':
-            return State.THIS_MONTH
-        elif response == 'q':
-            return State.THIS_QUARTER
-        elif response == 'y':
-            return State.THIS_YEAR
-        elif response == 'd':
-            return State.DROPPED
+        action = get_action(response)
+        instructions = generate_instructions()
+
+        if action:
+            return action.state
+        elif response == "help":
+            print(f"{instructions}\n")
+            response = get_task_input(task, section)
         else:
-            print("I didn't understand that, please try again")
-            response = input(task + '\n')
+            print(f"I didn't understand that, please try again\n{instructions}\n")
+            response = get_task_input(task, section)
 
 
 def read_section(filepath: str, section: Section, to_review: bool) -> List[str]:
